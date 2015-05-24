@@ -17,17 +17,17 @@ request_token = client.authentication_request_token(
 )
 
 
-logger.info "Go to #{request_token.authorize_url}"
-logger.info "Write your pincode here:"
-
-pincode = gets.strip
-access_token = client.authorize(
-  request_token.token,
-  request_token.secret,
-  :oauth_verifier => pincode
-)
-
-options_twitter[:access_token]        = access_token.token
-options_twitter[:access_token_secret] = access_token.secret
-
-logger.info "Logging status #{options_twitter.to_s}"
+if (ARGV[3] == nil)
+  logger.info "Go to #{request_token.authorize_url}"
+else
+  access_token = client.authorize(
+    request_token.token,
+    request_token.secret,
+    :oauth_verifier => ARGV[3]
+  )
+  
+  options_twitter[:access_token]        = access_token.token
+  options_twitter[:access_token_secret] = access_token.secret
+  
+  logger.info "Logging status #{options_twitter.to_s}"
+end
