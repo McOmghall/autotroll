@@ -1,13 +1,16 @@
 # Pull base image.
-FROM ubuntu:14.04
+FROM fedora:22
 
 # Install.
-RUN yum install ruby
+RUN dnf upgrade
+RUN dnf install ruby
 RUN gem install bundler
 
 # Add files.
-ADD root/.bashrc /root/.bashrc
-ADD root/.gitconfig /root/.gitconfig
-ADD root/.scripts /root/.scripts
+ADD src/ /usr/lib/dump-script
+
+WORKDIR /usr/lib/dump-script
+
+RUN 
 
 EXPOSE 80
