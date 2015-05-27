@@ -30,14 +30,29 @@ class Integer
   MIN = -MAX - 1
 end
 
+filters = Dir[File.dirname(__FILE__) + '/stopword-locales/*.csv'].each_with_object({}) do |file, filters|
+  lang = File.basename(file, '.csv').to_sym
+  filters[lang] = File.read(file).split(",")
+end
+
+stopwords = filters[:es]
 results = {}
 max_id = Integer::MAX
+
+logger.info "Using stopwords #{stopwords.inspect}"
 
 begin
   for i in 0..15 do
     client.user_timeline("galiciabilingue", :count => 200, :max_id => max_id || Integer::MAX).collect do |tweet|
-      logger.info "#{tweet.lang} > #{tweet.text}"
+      logger.info "#{tweet.lang} > #{tweet.user} > #{tweet.created_at} > #{tweet.text}"
       max_id = tweet.id unless tweet.id > max_id
+
+      tweet.text.split(/,| /).select do |word|
+        !stopwords.include? word.downcase
+      end.each do |word|
+        results[word.downcase] ||= 0
+        results[word.downcase] += 1
+      end
     end
   end
 
