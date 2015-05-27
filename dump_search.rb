@@ -7,6 +7,7 @@ logger = Logger.new(STDOUT)
 
 # Hax to bypass SSL verification
 OpenSSL::SSL::VERIFY_PEER = OpenSSL::SSL::VERIFY_NONE
+options_twitter = OAuthData.options_twitter
 
 logger.info "Crawl start"
 
