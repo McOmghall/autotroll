@@ -23,14 +23,21 @@ galiza = client.geo_search(:query => "Galiza")
 logger.info "Galiza = #{galiza.inspect}"
 logger.info "Galiza search #{galiza.to_h[:result][:places][0][:centroid].reverse.join(",")},200km"
 
+class Integer
+  N_BYTES = [42].pack('i').size
+  N_BITS = N_BYTES * 16
+  MAX = 2 ** (N_BITS - 2) - 1
+  MIN = -MAX - 1
+end
+
 results = {}
+max_id = Integer::MAX
 
 begin
-  client.search("galiciabilingue").collect do |tweet|
-    logger.info "> #{tweet.text}"
-    tweet.text.split.each do |word|
-      results[word.downcase] ||= 0
-      results[word.downcase] += 1
+  for i in 0..15 do
+    client.user_timeline("galiciabilingue", :count => 200, :max_id => max_id || Integer::MAX).collect do |tweet|
+      logger.info "#{tweet.lang} > #{tweet.text}"
+      max_id = tweet.id unless tweet.id > max_id
     end
   end
 
