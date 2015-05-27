@@ -21,5 +21,5 @@
 
 
 every 1.minute do
-  command "echo Dump.dump", :output => File.expand_path(File.dirname(__FILE__)) + "log.log"
+  command "echo Dump.dump", :output => File.expand_path(File.dirname(__FILE__)) + "/schedule.log"
 end
