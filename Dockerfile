@@ -11,6 +11,7 @@ ADD src/ /usr/lib/dump-script
 
 WORKDIR /usr/lib/dump-script
 
-RUN 
+RUN bundle install
+RUN whenever --update-crontab
 
 EXPOSE 80
