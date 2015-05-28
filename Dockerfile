@@ -1,5 +1,5 @@
 # Pull base image.
-FROM fedora:22
+FROM fedora
 
 # Install.
 RUN dnf upgrade
