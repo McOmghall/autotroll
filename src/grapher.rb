@@ -5,14 +5,14 @@
 Neo4j::Session.open(:server_db)
 
 exclusions = [
-      %r{^/Especial:/$}, 
-      %r{^/Archivo:/$},
-      %r{^/Ayuda:/$},
-      %r{^/Anexo:/$}
+      /Especial:/, 
+      /Archivo:/,
+      /Ayuda:/,
+      /Anexo:/
     ]
 
 Anemone.crawl(URI.encode("http://es.wikipedia.org/wiki/España"), options = {depth_limit:5}) do |anemone|
-  anemone.skip_links_like %r{/Especial/}, %r{/Archivo/}, %r{/Ayuda/}, %r{/Anexo/} 
+  anemone.skip_links_like exclusions 
 
   anemone.on_every_page do |page|
     puts "Saving #{page.url}"
