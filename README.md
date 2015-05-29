@@ -1,5 +1,5 @@
 #Autotroll
-A ruby module that sets up sentiment analysis to troll twitter accounts.
+A ruby module that sets up sentiment analysis and semantic extraction from multiple web sources combining them in a neo4j database.
 
 ####Disclaimers
 
