@@ -1,8 +1,8 @@
 # encoding: UTF-8
 
-["anemone", "neo4j", "./models/page"].each {|lib| require lib}
+["anemone", "neo4j", "./models/page", "./config/neo4j_db_data"].each {|lib| require lib}
 
-Neo4j::Session.open(:server_db)
+Neo4j::Session.open(Config::Neo4j.session_type, Config::Neo4j.session_path, Config::Neo4j.session_options)
 
 exclusions = [
       /Especial:/, 
