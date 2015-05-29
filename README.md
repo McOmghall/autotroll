@@ -1,5 +1,5 @@
 #Autotroll
-A python module that sets up sentiment analysis to troll twitter accounts.
+A ruby module that sets up sentiment analysis to troll twitter accounts.
 
 ####Disclaimers
 
