@@ -11,18 +11,18 @@ exclusions = [
       /Anexo:/
     ]
 
-Anemone.crawl(URI.encode("http://es.wikipedia.org/wiki/España"), options = {depth_limit:5}) do |anemone|
+Anemone.crawl(URI.encode("http://es.wikipedia.org/wiki/España"), options = {:depth_limit => 5}) do |anemone|
   anemone.skip_links_like exclusions 
 
   anemone.on_every_page do |page|
     puts "Saving #{page.url}"
     
-    page_save = Page.find_or_create_by(name: page.url.to_s)
+    page_save = Page.find_or_create_by(:name => page.url.to_s)
 
     page.links.each do |link|
       puts "    -> Adding #{link}"
 
-      link_new = Page.find_or_create_by(name: link.to_s)
+      link_new = Page.find_or_create_by(:name => link.to_s)
 
       page_save.pages << link_new
     end

@@ -1,7 +1,7 @@
 require "twitter"
 require "twitter_oauth"
 require_relative "logger_config"
-require_relative "oauth_data"
+require_relative "config/oauth_data"
 require_relative "integer_extensions"
 
 # Hax to bypass SSL verification
@@ -32,11 +32,13 @@ class TwitterDumpSearch
     throw Exception.new("Required argument user string, to search for: given #{user}") unless user && !user.empty?
     i = 0 
     results = []
-    
+    min_date = @options[:min_time] + 100
+    max_id = @options[:starting_id]
+      
     handle_twitter_errors do
-      while i < @options[:loops] && (min_date || @options[:min_time] + 24) > @options[:min_time]
+      while i < @options[:loops] && min_date > @options[:min_time]
         @logger.info "Request with: #{min_date} > #{max_id}"
-        results_to_add = @client.user_timeline(user, :count => 200, :max_id => max_id || @options[:starting_id]).collect do |tweet|
+        results_to_add = @client.user_timeline(user, :count => 200, :max_id => max_id).collect do |tweet|
           @logger.info "Tweet: #{tweet.lang} > #{tweet.user.screen_name} > #{tweet.created_at} > #{tweet.text}"
             
           max_id = tweet.id - 1 unless tweet.id > max_id
@@ -74,6 +76,3 @@ class TwitterDumpSearch
     end
   end
 end
-
-
-results = TwitterDumpSearch.new(:loops => Integer::MAX, :min_time => Date.today.prev_year.prev_year.prev_year.to_time).dump_user_tweets("galiciabilingue")
