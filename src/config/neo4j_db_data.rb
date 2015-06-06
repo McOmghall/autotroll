@@ -2,9 +2,9 @@ module Config
   module Config::Neo4j
     def Neo4j.session_options
       {
-        basic_auth: {
-          username: 'neo4j',
-          password: 'neoneo'
+        :basic_auth => {
+          :username => 'neo4j',
+          :password => 'neoneo'
         }
       } 
     end
