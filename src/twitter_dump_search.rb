@@ -1,12 +1,25 @@
 require "twitter"
 require "twitter_oauth"
 require_relative "logger_config"
-require_relative "config/oauth_data"
 require_relative "integer_extensions"
 
-# Hax to bypass SSL verification
-OpenSSL::SSL::VERIFY_PEER = OpenSSL::SSL::VERIFY_NONE
+require "httplog" if (ENV["httplog"] == "true")
 
+begin
+  require_relative "oauth_data"
+rescue LoadError
+  module TwitterOAuthData
+    # Twitter analysis galiza https://apps.twitter.com/app/8301917/permissions
+    def TwitterOAuthData.options_twitter
+      {   
+        :consumer_key        => ENV['CONSUMER_KEY'],
+        :consumer_secret     => ENV['CONSUMER_SECRET'],
+        :access_token        => ENV['ACCESS_TOKEN'],
+        :access_token_secret => ENV['ACCESS_TOKEN_SECRET']    
+      }
+    end
+  end
+end
 
 class TwitterDumpSearch
   
@@ -18,14 +31,15 @@ class TwitterDumpSearch
   
   def initialize options_override = {}
     @logger = LoggerConfig.new
-    @logger.info "Initializing crawler start, provided options: #{options_override}"
+    @logger.debug "Client configured with #{TwitterOAuthData.options_twitter.keys}"
+    @logger.debug "Initializing crawler start, provided options: #{options_override}"
     
-    @client = Twitter::REST::Client.new OAuthData.options_twitter
-    @logger.info "Client configured #{@client.to_s} as #{@client.user.name}"
+    @client = Twitter::REST::Client.new TwitterOAuthData.options_twitter
+    @logger.debug "Client configured #{@client.to_s} as #{@client.user.name}"
 
     @options = DEFAULT_OPTIONS.merge(options_override)
     
-    @logger.info "Client options #{@options.inspect}"
+    @logger.debug "Client options #{@options.inspect}"
   end
   
   def dump_user_tweets user
@@ -37,9 +51,9 @@ class TwitterDumpSearch
       
     handle_twitter_errors do
       while i < @options[:loops] && min_date > @options[:min_time]
-        @logger.info "Request with: #{min_date} > #{max_id}"
+        @logger.debug "Request with: #{min_date} > #{max_id}"
         results_to_add = @client.user_timeline(user, :count => 200, :max_id => max_id).collect do |tweet|
-          @logger.info "Tweet: #{tweet.lang} > #{tweet.user.screen_name} > #{tweet.created_at} > #{tweet.text}"
+          @logger.debug "Tweet: #{tweet.lang} > #{tweet.user.screen_name} > #{tweet.created_at} > #{tweet.text}"
             
           max_id = tweet.id - 1 unless tweet.id > max_id
           min_date = tweet.created_at unless tweet.created_at > min_date
@@ -55,9 +69,17 @@ class TwitterDumpSearch
       end
     end
     
-    @logger.info "We've reached an empty stream, probably the limit of it. Crawl end"
+    @logger.debug "We've reached an empty stream, probably the limit of it. Crawl end"
     
     return results
+  end
+  
+  def tweet_gz_hour
+    utc_hour = Time.now.getutc
+    official_hour = utc_hour.getlocal "+01:00"
+    handle_twitter_errors do
+      @client.update "Son as #{utc_hour.strftime "%H:%M:%S"} na Galiza, #{official_hour.strftime "%H:%M:%S"} pola hora oficial"
+    end
   end
   
   def handle_twitter_errors &block
