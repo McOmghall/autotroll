@@ -26,7 +26,8 @@ class TwitterDumpSearch
   DEFAULT_OPTIONS = {
       :loops => 15,
       :min_time => Date.today.prev_year.to_time,
-      :starting_id => Integer::MAX
+      :starting_id => Integer::MAX,
+      :retweet => false
   }
   
   def initialize options_override = {}
@@ -57,7 +58,17 @@ class TwitterDumpSearch
             
           max_id = tweet.id - 1 unless tweet.id > max_id
           min_date = tweet.created_at unless tweet.created_at > min_date
-            
+          
+          begin
+            tweet.retweet! if @options[:retweet]
+          rescue Twitter::Error::AlreadyRetweeted
+            @logger.warn "Already retweeted that tweet. Next!"
+            next
+          rescue Twitter::Error::NotFound
+            @logger.warn "Tweet doesn't seem to exist, maybe deleted by user. Next!"
+            next
+          end
+          
           tweet
         end
         
