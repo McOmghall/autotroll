@@ -14,4 +14,8 @@ task :rt_gz_gl do
   TwitterDumpSearch.new(:loops => 1, :min_time => Time.new - 60 * 60 * 2, :starting_id => Integer::MAX, :retweet => true).dump_user_tweets(ENV['RETWEET_ACCOUNT'])
 end
 
+task :bom_dia do
+  TwitterDumpSearch.new.tweet_bom_dia
+end
+
 task :default => [:test]

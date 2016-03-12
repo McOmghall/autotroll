@@ -97,10 +97,17 @@ class TwitterDumpSearch
     utc_hour = Time.now.getutc
     official_hour = utc_hour.getlocal "+01:00"
     handle_twitter_errors do
-      @client.update "Son as #{utc_hour.strftime "%H:%M:%S"} na Galiza, #{official_hour.strftime "%H:%M:%S"} pola hora oficial"
+      @client.update "Son as #{utc_hour.strftime "%H"}:00 na Galiza, #{official_hour.strftime "%H"}:00 pola hora oficial"
     end
   end
   
+
+  def tweet_bom_dia
+    handle_twitter_errors do
+      @client.update "Bo día, Galiza. Bom dia, Portugal."
+    end
+  end
+
   def handle_twitter_errors &block
     begin
       yield
