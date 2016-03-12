@@ -54,15 +54,23 @@ class TwitterDumpSearch
       while i < @options[:loops] && min_date > @options[:min_time]
         @logger.debug "Request with: #{min_date} > #{max_id}"
         results_to_add = @client.user_timeline(user, :count => 200, :max_id => max_id).collect do |tweet|
+          if tweet.created_at < @options[:min_time]
+            @logger.debug "Too old tweet: #{tweet.lang} > #{tweet.user.screen_name} > #{tweet.created_at} > #{tweet.text}"
+            next
+          end
+
           @logger.debug "Tweet: #{tweet.lang} > #{tweet.user.screen_name} > #{tweet.created_at} > #{tweet.text}"
-            
+          
           max_id = tweet.id - 1 unless tweet.id > max_id
           min_date = tweet.created_at unless tweet.created_at > min_date
           
           begin
-            tweet.retweet! if @options[:retweet]
+            @client.retweet [tweet.id] if @options[:retweet]
           rescue Twitter::Error::AlreadyRetweeted
             @logger.warn "Already retweeted that tweet. Next!"
+            next
+          rescue Twitter::Error::Forbidden
+            @logger.warn "Cant retweet, possibly already retweeted. Next!"
             next
           rescue Twitter::Error::NotFound
             @logger.warn "Tweet doesn't seem to exist, maybe deleted by user. Next!"
