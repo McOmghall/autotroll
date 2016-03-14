@@ -1,21 +1,27 @@
 require 'rake/testtask'
-require_relative 'src/twitter_dump_search'
+require_relative 'galizabot'
 
 Rake::TestTask.new do |t|
   t.test_files = FileList['test/test*.rb']
   t.verbose = true
 end
 
-task :gz_hour do
-  TwitterDumpSearch.new.tweet_gz_hour
+task :dump_new_search_results do
+  Galizabot.new('galizalizaliza') do |bot|
+    bot.access_token = TwitterOAuthData.options_twitter[:access_token]
+    bot.access_token_secret = TwitterOAuthData.options_twitter[:access_token_secret]
+    bot.dump_custom_search
+    exit 0
+  end
 end
 
-task :rt_gz_gl do
-  TwitterDumpSearch.new(:loops => 1, :min_time => Time.new - 60 * 60 * 2, :starting_id => Integer::MAX, :retweet => true).dump_user_tweets(ENV['RETWEET_ACCOUNT'])
-end
-
-task :bom_dia do
-  TwitterDumpSearch.new.tweet_bom_dia
+task :generate_model_samples do
+  Galizabot.new('galizalizaliza') do |bot|
+    bot.access_token = TwitterOAuthData.options_twitter[:access_token]
+    bot.access_token_secret = TwitterOAuthData.options_twitter[:access_token_secret]
+    bot.generate_model_samples
+    exit 0
+  end
 end
 
 task :default => [:test]
