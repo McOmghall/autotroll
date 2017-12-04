@@ -53,10 +53,10 @@ class Galizabot < Ebooks::Bot
   def on_startup
     log 'starting up'
     model = Ebooks::Model.load('./model/search_results.model')
-    tweet model.make_statement(140)
+    tweet 'Galiza esperta:' + model.make_statement(140)
     log 'made an statement'
-    scheduler.every '40m' do
-      tweet model.make_statement(140)
+    scheduler.every '60m' do
+      tweet 'Galiza di:' + model.make_statement(140)
     end
   end
 
