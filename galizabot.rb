@@ -20,6 +20,16 @@ rescue LoadError
   end
 end
 
+class FileLikeStringIO < StringIO
+  def to_io
+    self
+  end
+
+  def path
+    "/lifelikeimg.png"
+  end
+end
+
 class Galizabot < Ebooks::Bot
   # Configuration here applies to all MyBots
   def configure
@@ -48,8 +58,15 @@ class Galizabot < Ebooks::Bot
   
   def dump_galiza_is_thinking
     log "Getting thoughts of Galiza"
-    search_text = (self.twitter.search("galiza", :result_type => "recent").collect.to_a + self.twitter.search("galicia", :result_type => "recent").collect.to_a).map do |tweet|
-	  tweet.text.gsub(/(?:f|ht)tps?:\/[^\s]+/, '').gsub(/RT \@[a-zA-Z0-9]+\:/, '')
+	search_text = {
+		:galiza => to_a_with_rate_limit_retry(with_rate_limit_retry {self.twitter.search("galiza", :result_type => "recent", :count => 100)}, 100),
+		:galicia => to_a_with_rate_limit_retry(with_rate_limit_retry {self.twitter.search("galicia", :result_type => "recent", :count => 100)}, 100)
+	}
+	search_text = search_text[:galiza] + search_text[:galicia]
+	search_text = search_text.map do |tweet|
+	  result = tweet.text.gsub(/(?:f|ht)tps?:\/[^\s]+/, '').gsub(/RT \@[a-zA-Z0-9]+\:/, '')
+	  log "Processing: #{result}"
+	  result
     end
 
 	Ebooks::Model.new.consume_lines(search_text).keywords.take(100).select{|e| e.length > 3}.sample
@@ -84,9 +101,19 @@ class Galizabot < Ebooks::Bot
 
 		if query_result.is_a?(Net::HTTPSuccess) then
 		  log "Got IMG: #{query_result.body.length}"
-		  as_IO_string = StringIO.new.puts query_result.body
+		  as_IO_string = FileLikeStringIO.new
+		  as_IO_string.puts query_result.body
 
-		  log "Updated #{self.twitter.update_with_media(message, as_IO_string)}"
+		  retry_limit = 3
+		  begin
+		    log "Updated #{self.twitter.update_with_media(message, as_IO_string)}"
+		  rescue Exception => e
+		    log "Retrying (left: #{retry_limit}) after 60 seconds because #{e.class}: #{e.message}"
+			sleep 60
+			retry_limit = retry_limit - 1
+			retry if retry_limit > 0
+		  end
+		  log "DONE THINKING"
 		end
       end
     end
@@ -102,7 +129,7 @@ class Galizabot < Ebooks::Bot
     log 'made an statement'
 	
 	thinking = dump_galiza_is_thinking
-	spawn_common_thought_about thinking, model.make_response(thinking, 60)
+	spawn_common_thought_about thinking, "Galiza pensa: #{model.make_response(thinking, 60)}"
     
 	# Make a random statement every hour
 	scheduler.every '60m' do
@@ -110,9 +137,9 @@ class Galizabot < Ebooks::Bot
     end
 
 	# Get a random image from a random frequent term every hour and a half
-	scheduler.every '121m' do
+	scheduler.every '57m' do
 	  thinking = dump_galiza_is_thinking
-	  spawn_common_thought_about thinking, "Galiza pensa #{model.make_response(thinking, 60)}"
+	  spawn_common_thought_about thinking, "Galiza pensa: #{model.make_response(thinking, 60)}"
 	end
   end
 
@@ -142,5 +169,45 @@ class Galizabot < Ebooks::Bot
 
   def on_retweet(tweet)
     follow(tweet.user.screen_name)
+  end
+  
+  ##########################
+  #  AUXILIARY  FUNCTIONS  #
+  ##########################
+  def to_a_with_rate_limit_retry(cursor, max_iterations = 0)
+    result = []
+	i = max_iterations
+	iterator = cursor.each
+    loop do
+      log "To array with #{max_iterations} > #{i}"
+      begin
+        item = with_rate_limit_retry { iterator.next }
+        result << item
+		i = i - 1
+
+		if i == 0 then
+		  break
+		end
+      rescue StopIteration
+        break
+      end
+    end
+	result
+  end
+
+  def with_rate_limit_retry(&_block)
+    begin
+      yield
+    rescue Twitter::Error::TooManyRequests => error
+      reset_in = error.rate_limit.reset_in + 1
+      log "too many Twitter requests, going to sleep for #{reset_in}"
+      sleep reset_in
+      retry
+    rescue Twitter::Error::InternalServerError => error
+      reset_in = 60
+      log "internal Twitter server error, going to sleep for #{reset_in}"
+      sleep reset_in
+      retry
+    end
   end
 end
