@@ -100,6 +100,9 @@ class Galizabot < Ebooks::Bot
     model = Ebooks::Model.load('./model/search_results.model')
     tweet "Galiza acordou: #{model.make_statement(140)}"
     log 'made an statement'
+	
+	thinking = dump_galiza_is_thinking
+	spawn_common_thought_about thinking, model.make_response(thinking, 60)
     
 	# Make a random statement every hour
 	scheduler.every '60m' do
@@ -107,7 +110,7 @@ class Galizabot < Ebooks::Bot
     end
 
 	# Get a random image from a random frequent term every hour and a half
-	scheduler.every '90m' do
+	scheduler.every '121m' do
 	  thinking = dump_galiza_is_thinking
 	  spawn_common_thought_about thinking, model.make_response(thinking, 60)
 	end
