@@ -112,7 +112,7 @@ class Galizabot < Ebooks::Bot
 	# Get a random image from a random frequent term every hour and a half
 	scheduler.every '121m' do
 	  thinking = dump_galiza_is_thinking
-	  spawn_common_thought_about thinking, model.make_response(thinking, 60)
+	  spawn_common_thought_about thinking, "Galiza pensa #{model.make_response(thinking, 60)}"
 	end
   end
 
