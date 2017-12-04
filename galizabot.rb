@@ -68,23 +68,23 @@ class Galizabot < Ebooks::Bot
 	  uri = URI('https://www.google.es/search')
 	  params = { :q => common_thought, :tbm => 'isch' } # Query string from twitter and image search
       uri.query = URI.encode_www_form(params)
-	  google_image_search = Net::HTTP.get_response(uri)
+	  query_result = Net::HTTP.get_response(uri)
 
-	  log "GETting #{uri} => #{google_image_search.inspect}"
+	  log "GETting #{uri} => #{query_result.inspect}"
 
-      if google_image_search.is_a?(Net::HTTPSuccess) then
+      if query_result.is_a?(Net::HTTPSuccess) then
 	    log "GET was a SUCCESS"
-	    log "Body length #{google_image_search.body.length}"
-	    imgs = Nokogiri::HTML(google_image_search.body).css("img")
+	    log "Body length #{query_result.body.length}"
+	    imgs = Nokogiri::HTML(query_result.body).css("img")
 	    log "Found #{imgs.length} images"
-		uri_img = URI(imgs.to_a.sample.attribute("src").value)
-		log "GETting random url: #{uri_img}"
+		uri = URI(imgs.to_a.sample.attribute("src").value)
+		log "GETting random url: #{uri}"
 
-		img = Net::HTTP.get_response(uri_img)
+		query_result = Net::HTTP.get_response(uri)
 
-		if img.is_a?(Net::HTTPSuccess) then
-		  log "Got IMG: #{img.body.length}"
-		  as_IO_string = StringIO.new.puts img.body
+		if query_result.is_a?(Net::HTTPSuccess) then
+		  log "Got IMG: #{query_result.body.length}"
+		  as_IO_string = StringIO.new.puts query_result.body
 
 		  log "Updated #{self.twitter.update_with_media(message, as_IO_string)}"
 		end
