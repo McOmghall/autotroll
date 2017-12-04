@@ -1,5 +1,8 @@
 require 'twitter_ebooks'
 require 'json'
+require 'net/http'
+require 'nokogiri'
+require 'stringio'
 
 begin
   require_relative "oauth_data"
@@ -42,6 +45,15 @@ class Galizabot < Ebooks::Bot
       f.write(JSON.pretty_generate(search_results))
     end
   end
+  
+  def dump_galiza_is_thinking
+    log "Getting thoughts of Galiza"
+    search_text = (self.twitter.search("galiza", :result_type => "recent").collect.to_a + self.twitter.search("galicia", :result_type => "recent").collect.to_a).map do |tweet|
+	  tweet.text.gsub(/(?:f|ht)tps?:\/[^\s]+/, '').gsub(/RT \@[a-zA-Z0-9]+\:/, '')
+    end
+
+	Ebooks::Model.new.consume_lines(search_text).keywords.take(100).select{|e| e.length > 3}.sample
+  end
 
   def generate_model_samples
     model = Ebooks::Model.load('./model/search_results.model')
@@ -49,15 +61,56 @@ class Galizabot < Ebooks::Bot
       log model.make_statement(140)
     end
   end
-  
+
+  def spawn_common_thought_about common_thought, message
+    log "Trying to spawn thought about #{common_thought}"
+	if common_thought.length > 3 then
+	  uri = URI('https://www.google.es/search')
+	  params = { :q => common_thought, :tbm => 'isch' } # Query string from twitter and image search
+      uri.query = URI.encode_www_form(params)
+	  google_image_search = Net::HTTP.get_response(uri)
+
+	  log "GETting #{uri} => #{google_image_search.inspect}"
+
+      if google_image_search.is_a?(Net::HTTPSuccess) then
+	    log "GET was a SUCCESS"
+	    log "Body length #{google_image_search.body.length}"
+	    imgs = Nokogiri::HTML(google_image_search.body).css("img")
+	    log "Found #{imgs.length} images"
+		uri_img = URI(imgs.to_a.sample.attribute("src").value)
+		log "GETting random url: #{uri_img}"
+
+		img = Net::HTTP.get_response(uri_img)
+
+		if img.is_a?(Net::HTTPSuccess) then
+		  log "Got IMG: #{img.body.length}"
+		  as_IO_string = StringIO.new.puts img.body
+
+		  log "Updated #{self.twitter.update_with_media(message, as_IO_string)}"
+		end
+      end
+    end
+  end
+
+  ##########################
+  # BOT STANDARD OPERATION #
+  ##########################
   def on_startup
     log 'starting up'
     model = Ebooks::Model.load('./model/search_results.model')
-    tweet 'Galiza acordou: ' + model.make_statement(140)
+    tweet "Galiza acordou: #{model.make_statement(140)}"
     log 'made an statement'
-    scheduler.every '60m' do
-      tweet 'Galiza di: ' + model.make_statement(140)
+    
+	# Make a random statement every hour
+	scheduler.every '60m' do
+      tweet "Galiza di: #{model.make_statement(140)}"
     end
+
+	# Get a random image from a random frequent term every hour and a half
+	scheduler.every '90m' do
+	  thinking = dump_galiza_is_thinking
+	  spawn_common_thought_about thinking, model.make_response(thinking, 60)
+	end
   end
 
   def on_message(dm)
@@ -81,12 +134,10 @@ class Galizabot < Ebooks::Bot
   end
 
   def on_favorite(user, tweet)
-    # Follow user who just favorited bot's tweet
-    # follow(user.screen_name)
+    follow(user.screen_name)
   end
 
   def on_retweet(tweet)
-    # Follow user who just retweeted bot's tweet
-    # follow(tweet.user.screen_name)
+    follow(tweet.user.screen_name)
   end
 end

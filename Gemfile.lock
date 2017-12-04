@@ -39,8 +39,13 @@ GEM
     memoizable (0.4.2)
       thread_safe (~> 0.3, >= 0.3.1)
     method_source (0.9.0)
+    mini_portile2 (2.3.0)
     multipart-post (2.0.0)
     naught (1.1.0)
+    nokogiri (1.8.1)
+      mini_portile2 (~> 2.3.0)
+    nokogiri (1.8.1-x64-mingw32)
+      mini_portile2 (~> 2.3.0)
     oauth (0.5.3)
     power_assert (1.1.1)
     pry (0.11.3)
@@ -94,6 +99,7 @@ PLATFORMS
 DEPENDENCIES
   bundler
   httplog
+  nokogiri
   rake
   test-unit
   twitter_ebooks
