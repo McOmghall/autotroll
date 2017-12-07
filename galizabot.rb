@@ -84,37 +84,37 @@ class Galizabot < Ebooks::Bot
 	if common_thought.length > 3 then
 	  uri = URI('https://www.google.es/search')
 	  params = { :q => common_thought, :tbm => 'isch' } # Query string from twitter and image search
-      uri.query = URI.encode_www_form(params)
+    uri.query = URI.encode_www_form(params)
 	  query_result = Net::HTTP.get_response(uri)
 
 	  log "GETting #{uri} => #{query_result.inspect}"
 
-      if query_result.is_a?(Net::HTTPSuccess) then
+    if query_result.is_a?(Net::HTTPSuccess) then
 	    log "GET was a SUCCESS"
 	    log "Body length #{query_result.body.length}"
 	    imgs = Nokogiri::HTML(query_result.body).css("img")
 	    log "Found #{imgs.length} images"
-		uri = URI(imgs.to_a.sample.attribute("src").value)
-		log "GETting random url: #{uri}"
+		  uri = URI(imgs.to_a.sample.attribute("src").value)
+		  log "GETting random url: #{uri}"
 
-		query_result = Net::HTTP.get_response(uri)
+		  query_result = Net::HTTP.get_response(uri)
 
-		if query_result.is_a?(Net::HTTPSuccess) then
-		  log "Got IMG: #{query_result.body.length}"
-		  as_IO_string = FileLikeStringIO.new
-		  as_IO_string.puts query_result.body
+		  if query_result.is_a?(Net::HTTPSuccess) then
+		    log "Got IMG: #{query_result.body.length}"
+		    as_IO_string = FileLikeStringIO.new
+		    as_IO_string.puts query_result.body
 
-		  retry_limit = 3
-		  begin
-		    log "Updated #{self.twitter.update_with_media(message, as_IO_string)}"
-		  rescue Exception => e
-		    log "Retrying (left: #{retry_limit}) after 60 seconds because #{e.class}: #{e.message}"
-			sleep 60
-			retry_limit = retry_limit - 1
-			retry if retry_limit > 0
+		    retry_limit = 3
+		    begin
+		      log "Updated #{self.twitter.update_with_media(message, as_IO_string)}"
+		    rescue Exception => e
+		      log "Retrying (left: #{retry_limit}) after 60 seconds because #{e.class}: #{e.message}"
+			  sleep 60
+			  retry_limit = retry_limit - 1
+			  retry if retry_limit > 0
+		    end
+		    log "DONE THINKING"
 		  end
-		  log "DONE THINKING"
-		end
       end
     end
   end
@@ -125,22 +125,13 @@ class Galizabot < Ebooks::Bot
   def on_startup
     log 'starting up'
     model = Ebooks::Model.load('./model/search_results.model')
-    tweet "Galiza acordou: #{model.make_statement(140)}"
+    tweet "Galiza acordou: #{model.make_statement(160)}"
     log 'made an statement'
-	
-	thinking = dump_galiza_is_thinking
-	spawn_common_thought_about thinking, "Galiza pensa: #{model.make_response(thinking, 60)}"
     
-	# Make a random statement every hour
-	scheduler.every '60m' do
-      tweet "Galiza di: #{model.make_statement(140)}"
+	  # Make a random statement every hour
+	  scheduler.every '60m' do
+      tweet "Galiza di: #{model.make_statement(160)}"
     end
-
-	# Get a random image from a random frequent term every hour and a half
-	scheduler.every '57m' do
-	  thinking = dump_galiza_is_thinking
-	  spawn_common_thought_about thinking, "Galiza pensa: #{model.make_response(thinking, 60)}"
-	end
   end
 
   def on_message(dm)
