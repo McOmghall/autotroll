@@ -4,6 +4,7 @@ const Twitter = require('twitter')
 const request = require('request-promise-native')
 const cheerio = require('cheerio')
 const http = require('http')
+const https = require('https')
 const stopwords = [].concat(require('stopwords-es')).concat(require('stopwords-pt')).concat(require('stopwords-gl')).concat(require('stopwords-en'))
 
 const pseudoMarkovNetwork = auxFunctions.pseudoMarkovNetwork(nomenclator)
@@ -94,5 +95,5 @@ http.createServer(function (request, response) {
 
 console.log('Ready to rumble')
 
-setInterval(() => http.get(process.env.APP_URL), 10 * 60 * 1000) // Keep alive, every 10 mins
+setInterval(() => (process.env.APP_URL.includes('https') ? https : http).get(process.env.APP_URL), 10 * 60 * 1000) // Keep alive, every 10 mins
 setInterval(repeat, 15 * 60 * 1000) // Every 15 mins
