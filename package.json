@@ -22,9 +22,13 @@
     "google-images": "2.1.0",
     "request": "2.83.0",
     "request-promise-native": "^1.0.5",
+    "standard": "latest",
+    "stopwords-en": "^0.3.0",
+    "stopwords-es": "^0.3.0",
+    "stopwords-gl": "^0.1.0",
+    "stopwords-pt": "^0.3.0",
     "synaptic": "1.1.4",
-    "twitter": "1.7.1",
-    "standard": "latest"
+    "twitter": "1.7.1"
   },
   "standard": {
     "ignore": [
