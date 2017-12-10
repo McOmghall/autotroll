@@ -1,0 +1,36 @@
+{
+  "name": "autotroll",
+  "version": "0.0.0",
+  "description": "It trolls the twitter",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/McOmghall/autotroll.git"
+  },
+  "author": "Pedro Montoto Garcia",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/McOmghall/autotroll/issues"
+  },
+  "dependencies": {
+    "cheerio": "1.0.0-rc.2",
+    "envify": "4.1.0",
+    "google-images": "2.1.0",
+    "request": "2.83.0",
+    "request-promise-native": "^1.0.5",
+    "synaptic": "1.1.4",
+    "twitter": "1.7.1",
+    "standard": "latest"
+  },
+  "standard": {
+    "ignore": [
+      "test/**",
+      "vendor/**"
+    ]
+  },
+  "private": true
+}

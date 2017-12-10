@@ -1,5 +1,4 @@
-language: ruby
-rvm:
-  - 2.2
-script:
-  - bundle exec rake test
+language: node_js
+node_js:
+  - "8.9"
+  
