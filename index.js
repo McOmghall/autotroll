@@ -49,6 +49,7 @@ const repeat = () => refraneiro.then((result) => {
 
 const galizaStream = twitterClient.stream('statuses/filter', { track: 'galiza,galicia' })
 const words = {}
+var time = Date.now()
 const wordExclusionList = ['galiza', 'galicia']
 const ACTIVATION_WORD_COUNT = 100
 galizaStream.on('data', (event) => {
@@ -70,18 +71,19 @@ galizaStream.on('data', (event) => {
     return txt.toLowerCase()
   })(event.text)
 
-  console.log('Received %s -> %s -> %s', event.id, event.text, event.cleantext)
-
   for (let w in event.cleantext.split(' ')) {
     words[w] = (words[w] || 0) + 1
 
     if (words[w] > ACTIVATION_WORD_COUNT && !wordExclusionList.includes(w)) {
-      Object.keys(words).forEach((k) => { delete words[k] })
-
+      console.log('Time to get a term: %s', Date.now() - time)
+      time = Date.now()
       console.log('GALIZA is THINKING ABOUT %s', w)
+      Object.keys(words).forEach((k) => { delete words[k] })
       break
     }
   }
+
+  console.log('Top 5 terms: %j', Object.keys(words).sort((a, b) => words[a] - words[b]).slice(0, 4))
 })
 
 http.createServer(function (request, response) {
