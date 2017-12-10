@@ -72,7 +72,7 @@ galizaStream.on('data', (event) => {
   })(event.text)
 
   for (let i in event.cleantext.split(' ')) {
-    let w = event.cleantext[i]
+    let w = event.cleantext.split(' ')[i]
     words[w] = (words[w] || 0) + 1
 
     if (words[w] > ACTIVATION_WORD_COUNT && !wordExclusionList.includes(w)) {
