@@ -5,7 +5,6 @@ const request = require('request-promise-native')
 const cheerio = require('cheerio')
 const http = require('http')
 
-
 const pseudoMarkovNetwork = auxFunctions.pseudoMarkovNetwork(nomenclator)
 const trueMarkovNetwork = auxFunctions.trueMarkovNetwork(nomenclator)
 const refraneiro = Promise.all(new Array(100).fill(1).map((e, i) => request.get({
@@ -45,11 +44,11 @@ const repeat = () => refraneiro.then((result) => {
   console.log('Success: %s', urlResult)
 }).catch((error) => {
   console.error('Error: %j', error)
-  })
+})
 
 http.createServer(function (request, response) {
   response.writeHead(200)
-}).listen(process.env.PORT || 8080) 
+}).listen(process.env.PORT || 8080)
 
 console.log('Ready to rumble')
 
