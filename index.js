@@ -52,4 +52,5 @@ http.createServer(function (request, response) {
 
 console.log('Ready to rumble')
 
+setInterval(() => http.get(process.env.APP_URL), 10 * 60 * 1000) // Keep alive, every 10 mins
 setInterval(repeat, 15 * 60 * 1000) // Every 15 mins
