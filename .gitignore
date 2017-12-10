@@ -61,3 +61,4 @@ twitter_oauth_data.rb
 src/config/twitter_oauth_data.rb
 config/twitter_oauth_data.rb
 node_modules/
+twitconfig.js

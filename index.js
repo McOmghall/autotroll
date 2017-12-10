@@ -24,7 +24,7 @@ const refraneiro = Promise.all(new Array(20).fill(1).map((e, i) => request.get({
   return results.reduce((a, e) => a.concat(e), [])
 })
 
-const twitterClient = new Twitter({
+const twitterClient = new Twitter(require('./twitconfig') || {
   consumer_key: process.env.CONSUMER_KEY,
   consumer_secret: process.env.CONSUMER_SECRET,
   access_token_key: process.env.ACCESS_TOKEN,
@@ -52,7 +52,7 @@ const galizaStream = twitterClient.stream('statuses/filter', { track: 'galiza,ga
 const words = {}
 var time = Date.now()
 const wordExclusionList = ['galiza', 'galicia']
-const ACTIVATION_WORD_COUNT = 100
+const ACTIVATION_WORD_COUNT = 10
 galizaStream.on('data', (event) => {
   event.cleantext = ((e) => {
     var txt = Object.assign(e)
@@ -85,7 +85,7 @@ galizaStream.on('data', (event) => {
     }
   }
 
-  console.log('Top 5 terms: %j', Object.keys(words).sort((a, b) => words[a] - words[b]).slice(0, 4))
+  console.log('Top 5 terms: %j', Object.keys(words).sort((a, b) => words[b] - words[a]).slice(0, 5).map((e) => ({ [e]: words[e] })))
 })
 
 http.createServer(function (request, response) {
