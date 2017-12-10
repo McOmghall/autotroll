@@ -3,6 +3,8 @@ const auxFunctions = require('./aux_functions')
 const Twitter = require('twitter')
 const request = require('request-promise-native')
 const cheerio = require('cheerio')
+const http = require('http')
+
 
 const pseudoMarkovNetwork = auxFunctions.pseudoMarkovNetwork(nomenclator)
 const trueMarkovNetwork = auxFunctions.trueMarkovNetwork(nomenclator)
@@ -22,10 +24,10 @@ const refraneiro = Promise.all(new Array(100).fill(1).map((e, i) => request.get(
 })
 
 const twitterClient = new Twitter({
-  consumer_key: process.env.TWITTER_CONSUMER_KEY || 'rYh1wRySn0W9WqCFex6wwHtSs',
-  consumer_secret: process.env.TWITTER_CONSUMER_SECRET || 'qpvCHUiLvE3VTrOJk4EA4zQbLeXSUz1hnYSi8jCLf9XfwxZ279',
-  access_token_key: process.env.TWITTER_ACCESS_TOKEN || '3294082702-gNDUsWmvYqoc4XnkAceNerSHKXkmH8TFzh1SUm4',
-  access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET || 'Wsh8gH6ZXlMUiw96shsapdMd8Q0jD4ccSylB8b07uSeDd'
+  consumer_key: process.env.TWITTER_CONSUMER_KEY,
+  consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
+  access_token_key: process.env.TWITTER_ACCESS_TOKEN,
+  access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
 })
 
 const repeat = () => refraneiro.then((result) => {
@@ -43,6 +45,12 @@ const repeat = () => refraneiro.then((result) => {
   console.log('Success: %s', urlResult)
 }).catch((error) => {
   console.error('Error: %j', error)
-})
+  })
+
+http.createServer(function (request, response) {
+  response.writeHead(200)
+}).listen(process.env.PORT || 8080) 
+
+console.log('Ready to rumble')
 
 setInterval(repeat, 15 * 60 * 1000) // Every 15 mins
