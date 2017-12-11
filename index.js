@@ -90,7 +90,10 @@ galizaStream.on('data', (event) => {
 
 http.createServer(function (request, response) {
   console.log('Ping')
-  response.writeHead(200)
+  response.writeHead(200, { 'Content-Type': 'text/plain' })
+  response.write(JSON.stringify(words, null, 2) + '\n\n')
+
+  response.end()
 }).listen(process.env.PORT || 8080)
 
 console.log('Ready to rumble')
