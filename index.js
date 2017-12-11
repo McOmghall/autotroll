@@ -24,12 +24,21 @@ const refraneiro = Promise.all(new Array(20).fill(1).map((e, i) => request.get({
   return results.reduce((a, e) => a.concat(e), [])
 })
 
-const twitterClient = new Twitter(require('./twitconfig') || {
-  consumer_key: process.env.CONSUMER_KEY,
-  consumer_secret: process.env.CONSUMER_SECRET,
-  access_token_key: process.env.ACCESS_TOKEN,
-  access_token_secret: process.env.ACCESS_TOKEN_SECRET
-})
+var twitconfig
+try {
+  console.log('Trying to get twitconfig from local config')
+  twitconfig = require('./twitconfig')
+} catch (e) {
+  console.log('Failed getting twitconfig from local config: Getting from env vars')
+  twitconfig = {
+    consumer_key: process.env.CONSUMER_KEY,
+    consumer_secret: process.env.CONSUMER_SECRET,
+    access_token_key: process.env.ACCESS_TOKEN,
+    access_token_secret: process.env.ACCESS_TOKEN_SECRET
+  }
+}
+
+const twitterClient = new Twitter(twitconfig)
 
 const repeat = () => refraneiro.then((result) => {
   result.makeString = function () {
