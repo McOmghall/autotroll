@@ -24,8 +24,9 @@ try {
 /// /////////////////////////////////////////////
 // CONFIGURE GOOGLE IMAGE SEARCH CLIENT
 /// /////////////////////////////////////////////
-const SEARCH_ENGINE_ID = secretconfig.googleimagesconfig.SEARCH_ENGINE_ID || process.env.SEARCH_ENGINE_ID
-const SEARCH_ENGINE_API_KEY = secretconfig.googleimagesconfig.SEARCH_ENGINE_API_KEY || process.env.SEARCH_ENGINE_API_KEY
+const imagesConfig = secretconfig.googleimagesconfig || {}
+const SEARCH_ENGINE_ID = imagesConfig.SEARCH_ENGINE_ID || process.env.SEARCH_ENGINE_ID
+const SEARCH_ENGINE_API_KEY = imagesConfig.SEARCH_ENGINE_API_KEY || process.env.SEARCH_ENGINE_API_KEY
 const googleImageSearchClient = new GoogleImages(SEARCH_ENGINE_ID, SEARCH_ENGINE_API_KEY)
 
 /// /////////////////////////////////////////////
