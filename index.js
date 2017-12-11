@@ -50,7 +50,7 @@ twitterClient.saySomething = async function generateRandomRefrain () {
     console.error('Error: %j', error)
   }
 }
-const twitterSearchTerms = ['galiza', 'galicia']
+const twitterSearchTerms = ['galiza', 'galicia', 'galego', 'polbo', 'gaita']
 const wordExclusionList = twitterSearchTerms
 const MAXIMUM_TWITTER_SEARCH_QUERIES = 5
 twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThinkingAbout () {
