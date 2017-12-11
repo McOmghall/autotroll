@@ -1,12 +1,40 @@
 const fs = require('fs')
+const request = require('request-promise-native')
+const cheerio = require('cheerio')
+const nomenclator = require('./model/clean')
+const emojiRegex = require('emoji-regex/text.js')()
+const stopwords = [].concat(require('stopwords-es')).concat(require('stopwords-pt')).concat(require('stopwords-gl')).concat(require('stopwords-en'))
 
-module.exports.cleanData = function (data) {
+/// //////////////////////////////////////
+// SYNTACTIC SUGARY FUNCTIONS
+/// //////////////////////////////////////
+
+// Execute the first cycle the next multiple of given period in an hour
+// i.e. for a period of 15 mins it will execute every hour and the following minutes: xx:00, xx:15, xx:30, xx:45
+module.exports.cycleAccordingToMinutesInClock = (repeat, periodInMilliseconds) => {
+  const firstCycleInMilliseconds = Math.ceil(Date.now().valueOf() / periodInMilliseconds) * periodInMilliseconds - Date.now().valueOf()
+  const hours = Math.floor(firstCycleInMilliseconds / (1000 * 60 * 60))
+  const mins = Math.floor((firstCycleInMilliseconds - hours * (1000 * 60 * 60)) / (1000 * 60))
+  const secs = Math.floor((firstCycleInMilliseconds - hours * (1000 * 60 * 60) - mins * (1000 * 60)) / 1000)
+  console.log('Waiting for %s:%s:%s before 1st %s', (hours < 10 ? '0' : '') + hours, (mins < 10 ? '0' : '') + mins, (secs < 10 ? '0' : '') + secs, repeat.name)
+
+  return setTimeout(() => {
+    repeat()
+    setInterval(repeat, periodInMilliseconds)
+  }, firstCycleInMilliseconds)
+}
+
+/// //////////////////////////////////////
+// FUNCTIONS TO CLEAN DATA FROM VARIOUS SOURCES
+/// //////////////////////////////////////
+
+module.exports.cleanDataFromNomenclators = function cleanDataFromNomenclators (data) {
   const clean = data.map((e) => {
     if (e[''] != null) {
       delete e['']
     }
 
-    const rval = { }
+    const rval = {}
     Object.keys(e).forEach((k) => {
       rval[k.toLowerCase()] = e[k]
     })
@@ -43,7 +71,29 @@ module.exports.cleanData = function (data) {
   })
 }
 
-module.exports.pseudoMarkovNetwork = function pseudoMarkovNetworkGenerate (nomenclator, overrideMapping) {
+module.exports.cleanTweetText = function cleanTweetText (text) {
+  var txt = text.toLowerCase()
+  txt = txt.replace(emojiRegex, '') // Destroy emoji
+  txt = txt.replace(/(?:https?|ftp):\/\/[\n\S]+/g, '') // Destroy urls
+  const symbols = [/\n/g, /\t/g, /\./g, /,/g, /\?/g, /�/g, /!/g, /�/g, /:/g, /\|/g, /\(/g, /\)/g, /-/g, /�/g, /"/g, /'/g, /`/g]
+  symbols.forEach((symbol) => {
+    txt = txt.replace(symbol, ' ') // Destroy puctuation (note spaces)
+  })
+  txt = txt.replace('rt ', '') // Destroy RT signals
+  txt = txt.replace(/#\w*/g, '') // Destroy hastags
+  txt = txt.replace(/@(\w){0,15}/g, '') // Destroy twitter handles
+  txt = txt.replace(/\u2026/g, '') // Destroy ellipses
+  txt = txt.replace(/\u201D/g, '') // Destroy right quotation marks
+  txt = txt.replace(/[0-9]/g, '') // Destroy numbers
+  txt = txt.split(' ').filter((e) => e !== ' ' && e !== '' && stopwords.indexOf(e.toLowerCase()) < 0).join(' ') // Destroy stopwords for relevant languages
+
+  return txt
+}
+
+/// //////////////////////////////////////
+// OBJECTS TO GENERATE RANDOM STRINGS
+/// //////////////////////////////////////
+module.exports.pseudoMarkovNetwork = (function pseudoMarkovNetworkGenerate (nomenclator, overrideMapping) {
   const mapping = overrideMapping || ((e) => e.lugar)
   const pseudoMarkovNetwork = nomenclator.map(mapping).reduce((a, e) => {
     const currentString = e
@@ -60,7 +110,7 @@ module.exports.pseudoMarkovNetwork = function pseudoMarkovNetworkGenerate (nomen
     }, a)
   }, { start: {} })
 
-    ;(function normalize (markov) {
+    ; (function normalize (markov) {
       Object.keys(markov).forEach((e) => {
         const currentElement = markov[e]
         const sumOfCounts = Object.keys(currentElement).reduce((a, e) => a + currentElement[e].count, 0)
@@ -95,9 +145,9 @@ module.exports.pseudoMarkovNetwork = function pseudoMarkovNetworkGenerate (nomen
   }
 
   return pseudoMarkovNetwork
-}
+}(nomenclator))
 
-module.exports.trueMarkovNetwork = function trueMarkovNetworkGenerate (nomenclator) {
+module.exports.trueMarkovNetwork = (function trueMarkovNetworkGenerate (nomenclator) {
   const trueMarkovNetwork = {}
   nomenclator.forEach((e) => {
     var positionString = ''
@@ -148,4 +198,28 @@ module.exports.trueMarkovNetwork = function trueMarkovNetworkGenerate (nomenclat
   }
 
   return trueMarkovNetwork
-}
+}(nomenclator))
+
+module.exports.refraneiro = (async function generateRefraneiro () {
+  const allRequests = await Promise.all(
+    new Array(20)
+      .fill(request.get)
+      .map((e, i) => e({
+        url: `http://refraneirogalego.com/page/${i + 1}/`,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36' // Yes, I am `actually' Chrome running on Windows! (to bypass throttling)
+        }
+      }).catch((error) => {
+        console.error('Getting Refraneiro: Error: %s -> %s', error.options.url, error.statusCode || '(Not Sure Of The Code)')
+        return ''
+      }))
+  )
+
+  const rval = allRequests
+    .map((e) => cheerio.load(e)('article h1 a').toArray().map((e) => e.children[0]).filter((e) => e.type === 'text').map((e) => e.data))
+    .reduce((a, e) => a.concat(e), [])
+  rval.makeString = function () {
+    return this[Math.floor((Math.random() * this.length))]
+  }
+  return rval
+}())

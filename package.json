@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "cheerio": "1.0.0-rc.2",
+    "emoji-regex": "^6.5.1",
     "envify": "4.1.0",
     "google-images": "2.1.0",
     "request": "2.83.0",
