@@ -5,6 +5,7 @@ const request = require('request-promise-native')
 const cheerio = require('cheerio')
 const http = require('http')
 const https = require('https')
+const GoogleImages = require('google-images')
 const stopwords = [].concat(require('stopwords-es')).concat(require('stopwords-pt')).concat(require('stopwords-gl')).concat(require('stopwords-en'))
 
 const pseudoMarkovNetwork = auxFunctions.pseudoMarkovNetwork(nomenclator)
@@ -24,21 +25,23 @@ const refraneiro = Promise.all(new Array(20).fill(1).map((e, i) => request.get({
   return results.reduce((a, e) => a.concat(e), [])
 })
 
-var twitconfig
+var secretconfig
 try {
-  console.log('Trying to get twitconfig from local config')
-  twitconfig = require('./twitconfig')
+  console.log('Trying to get secretconfig from local config')
+  secretconfig = require('./secretconfig')
 } catch (e) {
   console.log('Failed getting twitconfig from local config: Getting from env vars')
-  twitconfig = {
-    consumer_key: process.env.CONSUMER_KEY,
-    consumer_secret: process.env.CONSUMER_SECRET,
-    access_token_key: process.env.ACCESS_TOKEN,
-    access_token_secret: process.env.ACCESS_TOKEN_SECRET
-  }
 }
 
-const twitterClient = new Twitter(twitconfig)
+const twitterClient = new Twitter(secretconfig.twitconfig || {
+  consumer_key: process.env.CONSUMER_KEY,
+  consumer_secret: process.env.CONSUMER_SECRET,
+  access_token_key: process.env.ACCESS_TOKEN,
+  access_token_secret: process.env.ACCESS_TOKEN_SECRET
+})
+
+const googleImageSearchKeys = secretconfig.googleimagesconfig
+const GoogleImageSearchClient = new GoogleImages(googleImageSearchKeys.SEARCH_ENGINE_ID || process.env.SEARCH_ENGINE_ID, googleImageSearchKeys.SEARCH_ENGINE_API_KEY || process.env.SEARCH_ENGINE_API_KEY)
 
 const repeat = () => refraneiro.then((result) => {
   result.makeString = function () {
@@ -86,7 +89,7 @@ galizaStream.on('data', (event) => {
     words[w] = (words[w] || 0) + 1
 
     if (words[w] > ACTIVATION_WORD_COUNT && !wordExclusionList.includes(w)) {
-      console.log('Time to get a term: %s', Date.now() - time)
+      console.log('Time to get a term: %s mins', (Date.now() - time) / (1000 * 60)) // To minutes
       time = Date.now()
       console.log('GALIZA is THINKING ABOUT %s', w)
       Object.keys(words).forEach((k) => { delete words[k] })
@@ -99,13 +102,22 @@ galizaStream.on('data', (event) => {
 
 http.createServer(function (request, response) {
   console.log('Ping')
-  response.writeHead(200, { 'Content-Type': 'text/plain' })
-  response.write(JSON.stringify(words, null, 2) + '\n\n')
+  response.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+  response.write(JSON.stringify(Object.keys(words).sort((a, b) => words[b] - words[a]).map((e) => ({ [e]: words[e] })), null, 2) + '\n\n')
 
   response.end()
 }).listen(process.env.PORT || 8080)
 
 console.log('Ready to rumble')
 
-setInterval(() => (process.env.APP_URL.includes('https') ? https : http).get(process.env.APP_URL), 10 * 60 * 1000) // Keep alive, every 10 mins
-setInterval(repeat, 15 * 60 * 1000) // Every 15 mins
+const cycleInMillisecondsForKeepalive = 10 * 60 * 1000 // Keep alive every 10 mins
+const cycleInMillisecondsForNormalPosting = 15 * 60 * 1000 // Post every 15 mins
+const firstCycleInMilliseconds = Math.ceil(Date.now().valueOf() / cycleInMillisecondsForNormalPosting) * cycleInMillisecondsForNormalPosting - Date.now().valueOf() // Execute the first cycle the next multiple of 15 mins (as per cycleInMillisecondsForNormalPosting) in an hour (xx:00, xx:15, xx:30, xx:45)
+
+console.log('Waiting for %s minutes before 1st posting', firstCycleInMilliseconds / (60 * 1000))
+
+setInterval(() => (process.env.APP_URL.includes('https') ? https : http).get(process.env.APP_URL), cycleInMillisecondsForNormalPosting) 
+setTimeout(() => {
+  repeat()
+  setInterval(repeat, cycleInMillisecondsForNormalPosting)
+}, firstCycleInMilliseconds)
