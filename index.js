@@ -106,7 +106,7 @@ twitterClient.postImageAboutGalizasThoughts = async function postImageAboutGaliz
     const images = await googleImageSearchClient.search(searchTerms)
     const randomImageURL = images[Math.floor((Math.random() * images.length))].url
 
-    console.log('Found %s images, getting random %s', images.length)
+    console.log('Found %s images, getting random %s', images.length, randomImageURL)
     const image = Buffer.from(await request.get({ url: randomImageURL, encoding: null }), 'binary').toString('base64')
     console.log('Got image of %s base64 characters', image.length)
 
