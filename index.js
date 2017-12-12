@@ -13,7 +13,7 @@ var words = {
 /// /////////////////////////////////////////////
 // GET SECURITY KEYS ON LOCAL DEV MACHINES
 /// /////////////////////////////////////////////
-var secretconfig
+var secretconfig = {}
 try {
   console.log('Trying to get secretconfig from local config')
   secretconfig = require('./secretconfig')
@@ -24,7 +24,7 @@ try {
 /// /////////////////////////////////////////////
 // CONFIGURE GOOGLE IMAGE SEARCH CLIENT
 /// /////////////////////////////////////////////
-const imagesConfig = (secretconfig != null ? secretconfig.googleimagesconfig : {})
+const imagesConfig = secretconfig.googleimagesconfig || {}
 const SEARCH_ENGINE_ID = imagesConfig.SEARCH_ENGINE_ID || process.env.SEARCH_ENGINE_ID
 const SEARCH_ENGINE_API_KEY = imagesConfig.SEARCH_ENGINE_API_KEY || process.env.SEARCH_ENGINE_API_KEY
 const googleImageSearchClient = new GoogleImages(SEARCH_ENGINE_ID, SEARCH_ENGINE_API_KEY)
