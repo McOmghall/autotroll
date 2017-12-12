@@ -119,7 +119,7 @@ twitterClient.postImageAboutGalizasThoughts = async function postImageAboutGaliz
 
     return top5
   } catch (e) {
-    console.log('Something errored %s', e)
+    console.log('Something errored %s %j', e, e)
     console.trace()
     return null
   }
