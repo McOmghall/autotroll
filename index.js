@@ -38,7 +38,7 @@ const twitterClient = new Twitter(secretconfig.twitconfig || {
   access_token_key: process.env.ACCESS_TOKEN,
   access_token_secret: process.env.ACCESS_TOKEN_SECRET
 })
-twitterClient.saySomething = async function generateRandomRefrain () {
+twitterClient.saySomething = async function generateRandomRefrain() {
   const phrase = `No lugar de ${auxFunctions.pseudoMarkovNetwork.makeString()}, parroquia de ${auxFunctions.trueMarkovNetwork.makeString()}, andan a dicir: "${(await auxFunctions.refraneiro).makeString()}" #galiza #galicia #refraneiro`
   console.log('Posting on twitter: %s', phrase)
 
@@ -47,13 +47,13 @@ twitterClient.saySomething = async function generateRandomRefrain () {
     const urlResult = `https://twitter.com/${result.user.screen_name}/status/${result.id}`
     console.log('PostingSuccess: %s', urlResult)
   } catch (error) {
-    console.error('Error: %j', error)
+    console.error('Error while posting random refrain: %j', error)
   }
 }
 const twitterSearchTerms = ['galiza', 'galicia', 'galego']
 const wordExclusionList = twitterSearchTerms.concat(['palabras', 'hilo', 'gallego'])
 const MAXIMUM_TWITTER_SEARCH_QUERIES = 10
-twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThinkingAbout () {
+twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThinkingAbout() {
   const searchApi = this.get.bind(twitterClient, 'search/tweets')
   const basicSearchParams = { result_type: 'recent', tweet_mode: 'extended', count: 100 }
   const synthesis = {
@@ -65,31 +65,35 @@ twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThink
   console.log('Querying twitter about %s', q)
   var currentQuery = searchApi.bind(this, Object.assign({}, { q: q }, basicSearchParams))
   do {
-    let result = await currentQuery()
-    synthesis.queries = synthesis.queries + 1
-    synthesis.amountOfResults = synthesis.amountOfResults + result.statuses.length
-    synthesis.wordList = result.statuses
-      .map((e) => e.full_text)
-      .map((e) => auxFunctions.cleanTweetText(e))
-      .reduce((a, e) => a.concat(e.split(' ')), [])
-      .reduce((a, e) => {
-        a[e] = (a[e] || 0) + 1
-        return a
-      }, synthesis.wordList)
-    console.log('Queried twitter (remaining %s times), got %s results', MAXIMUM_TWITTER_SEARCH_QUERIES - synthesis.queries, synthesis.amountOfResults)
+    try {
+      let result = await currentQuery()
+      synthesis.queries = synthesis.queries + 1
+      synthesis.amountOfResults = synthesis.amountOfResults + result.statuses.length
+      synthesis.wordList = result.statuses
+        .map((e) => e.full_text)
+        .map((e) => auxFunctions.cleanTweetText(e))
+        .reduce((a, e) => a.concat(e.split(' ')), [])
+        .reduce((a, e) => {
+          a[e] = (a[e] || 0) + 1
+          return a
+        }, synthesis.wordList)
+      console.log('Queried twitter (remaining %s times), got %s results', MAXIMUM_TWITTER_SEARCH_QUERIES - synthesis.queries, synthesis.amountOfResults)
 
-    if (!(result.search_metadata && result.search_metadata.next_results)) {
-      break
-    } else {
-      console.log('Continuating query (remaining %s times) with %s', MAXIMUM_TWITTER_SEARCH_QUERIES - synthesis.queries, result.search_metadata.next_results)
-      const nextParams = querystring.parse(result.search_metadata.next_results.replace('?', ''))
-      currentQuery = searchApi.bind(this, Object.assign({}, nextParams, basicSearchParams))
+      if (!(result.search_metadata && result.search_metadata.next_results)) {
+        break
+      } else {
+        console.log('Continuating query (remaining %s times) with %s', MAXIMUM_TWITTER_SEARCH_QUERIES - synthesis.queries, result.search_metadata.next_results)
+        const nextParams = querystring.parse(result.search_metadata.next_results.replace('?', ''))
+        currentQuery = searchApi.bind(this, Object.assign({}, nextParams, basicSearchParams))
+      }
+    } catch (e) {
+      console.error('Something has failed while searching twitter %s %j', e, e)
     }
   } while (synthesis.queries < MAXIMUM_TWITTER_SEARCH_QUERIES)
 
   return synthesis
 }
-twitterClient.postImageAboutGalizasThoughts = async function postImageAboutGalizasThoughts () {
+twitterClient.postImageAboutGalizasThoughts = async function postImageAboutGalizasThoughts() {
   try {
     const thoughts = await this.getWhatGalizaIsThinkingAbout()
     words = thoughts // Too deep for me
@@ -119,7 +123,7 @@ twitterClient.postImageAboutGalizasThoughts = async function postImageAboutGaliz
 
     return top5
   } catch (e) {
-    console.log('Something errored %s %j', e, e)
+    console.log('Something errored while posting Galiza\'s thoughts %s %j', e, e)
     console.trace()
     return null
   }
