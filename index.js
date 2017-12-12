@@ -129,7 +129,7 @@ twitterClient.postImageAboutGalizasThoughts = async function postImageAboutGaliz
 // ACTIVATE BOT PROCESSES
 /// /////////////////////////////////////////////
 
-const cycleInMillisecondsForKeepalive = 30 * 60 * 1000 // Keep alive every 30 mins
+const cycleInMillisecondsForKeepalive = 5 * 60 * 1000 // Keep alive every 5 mins
 const cycleInMillisecondsForNormalPosting = 15 * 60 * 1000 // Post every 15 mins
 const cycleInMillisecondsForGalizaIsThinking = 3 * 60 * 60 * 1000 // Post every 3 hours
 
