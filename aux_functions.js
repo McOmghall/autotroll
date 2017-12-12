@@ -75,7 +75,7 @@ module.exports.cleanTweetText = function cleanTweetText (text) {
   var txt = text.toLowerCase()
   txt = txt.replace(emojiRegex, '') // Destroy emoji
   txt = txt.replace(/(?:https?|ftp):\/\/[\n\S]+/g, '') // Destroy urls
-  const symbols = [/\n/g, /\t/g, /\./g, /,/g, /\?/g, /�/g, /!/g, /�/g, /:/g, /\|/g, /\(/g, /\)/g, /-/g, /�/g, /"/g, /'/g, /`/g]
+  const symbols = [/\n/g, /\t/g, /\./g, /,/g, /\?/g, /�/g, /!/g, /�/g, /:/g, /\|/g, /\(/g, /\)/g, /-/g, /�/g, /"/g, /'/g, /`/g, /%/g]
   symbols.forEach((symbol) => {
     txt = txt.replace(symbol, ' ') // Destroy puctuation (note spaces)
   })

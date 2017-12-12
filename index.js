@@ -50,9 +50,9 @@ twitterClient.saySomething = async function generateRandomRefrain () {
     console.error('Error: %j', error)
   }
 }
-const twitterSearchTerms = ['galiza', 'galicia', 'galego', 'polbo', 'gaita']
-const wordExclusionList = twitterSearchTerms
-const MAXIMUM_TWITTER_SEARCH_QUERIES = 5
+const twitterSearchTerms = ['galiza', 'galicia', 'galego']
+const wordExclusionList = twitterSearchTerms.concat(['palabras', 'hilo', 'gallego'])
+const MAXIMUM_TWITTER_SEARCH_QUERIES = 10
 twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThinkingAbout () {
   const searchApi = this.get.bind(twitterClient, 'search/tweets')
   const basicSearchParams = { result_type: 'recent', tweet_mode: 'extended', count: 100 }
@@ -61,8 +61,9 @@ twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThink
     queries: 0,
     amountOfResults: 0
   }
-
-  var currentQuery = searchApi.bind(this, Object.assign({}, { q: twitterSearchTerms.join(',') }, basicSearchParams))
+  const q = twitterSearchTerms.join(' OR ')
+  console.log('Querying twitter about %s', q)
+  var currentQuery = searchApi.bind(this, Object.assign({}, { q: q }, basicSearchParams))
   do {
     let result = await currentQuery()
     synthesis.queries = synthesis.queries + 1
@@ -89,33 +90,39 @@ twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThink
   return synthesis
 }
 twitterClient.postImageAboutGalizasThoughts = async function postImageAboutGalizasThoughts () {
-  const thoughts = await this.getWhatGalizaIsThinkingAbout()
-  words = thoughts // Too deep for me
-  const terms = Object.keys(thoughts.wordList)
-  const top5 = terms
-    .filter((e) => !wordExclusionList.includes(e))
-    .map((e) => ({ [e]: thoughts.wordList[e] }))
-    .sort((a, b) => b[Object.keys(b)[0]] - a[Object.keys(a)[0]])
-    .slice(0, 5)
-  const top5terms = top5.map((e) => Object.keys(e)[0])
-  const searchTerms = top5terms[Math.floor((Math.random() * top5terms.length))]
+  try {
+    const thoughts = await this.getWhatGalizaIsThinkingAbout()
+    words = thoughts // Too deep for me
+    const terms = Object.keys(thoughts.wordList)
+    const top5 = terms
+      .filter((e) => !wordExclusionList.includes(e))
+      .map((e) => ({ [e]: thoughts.wordList[e] }))
+      .sort((a, b) => b[Object.keys(b)[0]] - a[Object.keys(a)[0]])
+      .slice(0, 5)
+    const top5terms = top5.map((e) => Object.keys(e)[0])
+    const searchTerms = top5terms[Math.floor((Math.random() * top5terms.length))]
 
-  console.log('From %s queries with %s tweets => Top 5/%s terms: %j', thoughts.queries, thoughts.amountOfResults, terms.length, searchTerms)
-  const images = await googleImageSearchClient.search(searchTerms)
-  const randomImageURL = images[Math.floor((Math.random() * images.length))].url
+    console.log('From %s queries with %s tweets => Searching for %s => Top 5/%s terms: %j', thoughts.queries, thoughts.amountOfResults, searchTerms, terms.length, top5terms)
+    const images = await googleImageSearchClient.search(searchTerms)
+    const randomImageURL = images[Math.floor((Math.random() * images.length))].url
 
-  console.log('Found %s images, getting random %s', images.length)
-  const image = await request.get(randomImageURL)
-  console.log('Got image of %s bytes', image.length)
+    console.log('Found %s images, getting random %s', images.length)
+    const image = Buffer.from(await request.get({ url: randomImageURL, encoding: null }), 'binary').toString('base64')
+    console.log('Got image of %s base64 characters', image.length)
 
-  const uploadResults = await this.post('media/upload', { media: image })
-  const phrase = `Looks like Galiza is thinking about "${searchTerms}"... #galiza #galicia`
-  const result = await this.post('statuses/update', { status: phrase, media_ids: uploadResults.media_id_string })
+    const uploadResults = await this.post('media/upload', { media_data: image })
+    const phrase = `Looks like Galiza is thinking about "${searchTerms}"... #galiza #galicia`
+    const result = await this.post('statuses/update', { status: phrase, media_ids: uploadResults.media_id_string })
 
-  const urlResult = `https://twitter.com/${result.user.screen_name}/status/${result.id}`
-  console.log('PostingSuccess: %s', urlResult)
+    const urlResult = `https://twitter.com/${result.user.screen_name}/status/${result.id}`
+    console.log('Posting Success: %s', urlResult)
 
-  return top5
+    return top5
+  } catch (e) {
+    console.log('Something errored %s', e)
+    console.trace()
+    return null
+  }
 }
 
 /// /////////////////////////////////////////////
