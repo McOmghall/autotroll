@@ -4,7 +4,7 @@
   "description": "It trolls the twitter",
   "main": "index.js",
   "scripts": {
-    "test": "standard",
+    "test": "standard && mocha",
     "start": "node index.js"
   },
   "repository": {
@@ -21,6 +21,7 @@
     "emoji-regex": "^6.5.1",
     "envify": "4.1.0",
     "google-images": "2.1.0",
+    "mocha": "^4.0.1",
     "request": "2.83.0",
     "request-promise-native": "^1.0.5",
     "standard": "latest",

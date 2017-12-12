@@ -38,8 +38,8 @@ const twitterClient = new Twitter(secretconfig.twitconfig || {
   access_token_key: process.env.ACCESS_TOKEN,
   access_token_secret: process.env.ACCESS_TOKEN_SECRET
 })
-twitterClient.saySomething = async function generateRandomRefrain() {
-  const phrase = `No lugar de ${auxFunctions.pseudoMarkovNetwork.makeString()}, parroquia de ${auxFunctions.trueMarkovNetwork.makeString()}, andan a dicir: "${(await auxFunctions.refraneiro).makeString()}" #galiza #galicia #refraneiro`
+twitterClient.saySomething = async function generateRandomRefrain () {
+  const phrase = await auxFunctions.generateSaying()
   console.log('Posting on twitter: %s', phrase)
 
   try {
@@ -53,7 +53,7 @@ twitterClient.saySomething = async function generateRandomRefrain() {
 const twitterSearchTerms = ['galiza', 'galicia', 'galego']
 const wordExclusionList = twitterSearchTerms.concat(['palabras', 'hilo', 'gallego'])
 const MAXIMUM_TWITTER_SEARCH_QUERIES = 10
-twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThinkingAbout() {
+twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThinkingAbout () {
   const searchApi = this.get.bind(twitterClient, 'search/tweets')
   const basicSearchParams = { result_type: 'recent', tweet_mode: 'extended', count: 100 }
   const synthesis = {
@@ -93,7 +93,7 @@ twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThink
 
   return synthesis
 }
-twitterClient.postImageAboutGalizasThoughts = async function postImageAboutGalizasThoughts() {
+twitterClient.postImageAboutGalizasThoughts = async function postImageAboutGalizasThoughts () {
   try {
     const thoughts = await this.getWhatGalizaIsThinkingAbout()
     words = thoughts // Too deep for me

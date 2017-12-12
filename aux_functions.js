@@ -131,15 +131,17 @@ module.exports.pseudoMarkovNetwork = (function pseudoMarkovNetworkGenerate (nome
 
   pseudoMarkovNetwork.makeString = function makeString () {
     var string = ''
-
     do {
-      const currentElement = (string.length - 1 >= 0 ? string[string.length - 1] : null)
-      const nextElement = this.chooseRandomNextElement(currentElement)
-      if (nextElement === 'end') {
-        break
-      }
-      string += nextElement
-    } while (true)
+      string = ''
+      do {
+        const currentElement = (string.length - 1 >= 0 ? string[string.length - 1] : null)
+        const nextElement = this.chooseRandomNextElement(currentElement)
+        if (nextElement === 'end') {
+          break
+        }
+        string += nextElement
+      } while (true)
+    } while (string.length > 60)
 
     return string
   }
@@ -182,17 +184,20 @@ module.exports.trueMarkovNetwork = (function trueMarkovNetworkGenerate (nomencla
 
   trueMarkovNetwork.makeString = function makeString () {
     var rval = ''
-    var position = trueMarkovNetwork
     do {
-      var dice = Math.random()
-      const next = Object.keys(position.next).find((e) => { dice -= position.next[e].probability; return dice <= 0 })
-      rval += next
-      position = position.next[next]
+      rval = ''
+      var position = trueMarkovNetwork
+      do {
+        var dice = Math.random()
+        const next = Object.keys(position.next).find((e) => { dice -= position.next[e].probability; return dice <= 0 })
+        rval += next
+        position = position.next[next]
 
-      if (position.next == null) {
-        break
-      }
-    } while (true)
+        if (position.next == null) {
+          break
+        }
+      } while (true)
+    } while (rval.length > 60)
 
     return rval
   }
@@ -201,25 +206,63 @@ module.exports.trueMarkovNetwork = (function trueMarkovNetworkGenerate (nomencla
 }(nomenclator))
 
 module.exports.refraneiro = (async function generateRefraneiro () {
-  const allRequests = await Promise.all(
-    new Array(20)
-      .fill(request.get)
-      .map((e, i) => e({
-        url: `http://refraneirogalego.com/page/${i + 1}/`,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36' // Yes, I am `actually' Chrome running on Windows! (to bypass throttling)
-        }
-      }).catch((error) => {
-        console.error('Getting Refraneiro: Error: %s -> %s', error.options.url, error.statusCode || '(Not Sure Of The Code)')
-        return ''
-      }))
-  )
-
-  const rval = allRequests
-    .map((e) => cheerio.load(e)('article h1 a').toArray().map((e) => e.children[0]).filter((e) => e.type === 'text').map((e) => e.data))
-    .reduce((a, e) => a.concat(e), [])
-  rval.makeString = function () {
-    return this[Math.floor((Math.random() * this.length))]
+  var rval = []
+  const makeString = function () {
+    var rval = this[Math.floor((Math.random() * this.length))]
+    while (rval.length > 200) {
+      rval = this[Math.floor((Math.random() * this.length))]
+    }
+    return rval
   }
-  return rval
+
+  try {
+    rval = rval.concat(require('./model/refraneiro'))
+    rval.makeString = makeString
+    return rval
+  } catch (e) {
+    console.log('Refraneiro not found as file, loading from the internet: %s %j', e, e)
+  }
+
+  try {
+    const allRequests = await Promise.all(
+      new Array(20)
+        .fill(request.get)
+        .map((e, i) => e({
+          url: `http://refraneirogalego.com/page/${i + 1}/`,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36' // Yes, I am `actually' Chrome running on Windows! (to bypass throttling)
+          }
+        }).catch((error) => {
+          console.error('Getting Refraneiro: Error: %s -> %s', error.options.url, error.statusCode || '(Not Sure Of The Code)')
+          return ''
+        }))
+    )
+
+    const cleanHtml = allRequests
+      .map((e) => cheerio.load(e)('article h1 a').toArray().map((e) => e.children[0]).filter((e) => e.type === 'text').map((e) => e.data))
+      .reduce((a, e) => a.concat(e), [])
+    rval = rval.concat(cleanHtml)
+    rval.makeString = makeString
+    fs.writeFile('./model/refraneiro.json', JSON.stringify(rval), 'utf8', (writeResult) => {
+      console.log('Written refraneiro to file %j', writeResult)
+    })
+    return rval
+  } catch (e) {
+    console.error('Something failed while trying to download refraneiro %s %j', e, e)
+    return []
+  }
 }())
+
+module.exports.sayings = {
+  makeString: async function () {
+    try {
+      const a = module.exports.pseudoMarkovNetwork.makeString()
+      const b = module.exports.trueMarkovNetwork.makeString()
+      const c = (await module.exports.refraneiro).makeString()
+      const phrase = `No lugar de ${a}, parroquia de ${b}, andan a dicir: "${c}" #refraneiro`
+      return phrase
+    } catch (e) {
+      console.error('Something happened while generating a saying %s %j', e, e)
+    }
+  }
+}
