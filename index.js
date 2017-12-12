@@ -133,7 +133,6 @@ const cycleInMillisecondsForKeepalive = 5 * 60 * 1000 // Keep alive every 5 mins
 const cycleInMillisecondsForNormalPosting = 15 * 60 * 1000 // Post every 15 mins
 const cycleInMillisecondsForGalizaIsThinking = 3 * 60 * 60 * 1000 // Post every 3 hours
 
-twitterClient.postImageAboutGalizasThoughts()
 setInterval(() => request.get(process.env.APP_URL), cycleInMillisecondsForKeepalive)
 auxFunctions.cycleAccordingToMinutesInClock(twitterClient.saySomething, cycleInMillisecondsForNormalPosting)
 auxFunctions.cycleAccordingToMinutesInClock(twitterClient.getWhatGalizaIsThinkingAbout, cycleInMillisecondsForGalizaIsThinking)
