@@ -38,7 +38,7 @@ const twitterClient = new Twitter(secretconfig.twitconfig || {
   access_token_key: process.env.ACCESS_TOKEN,
   access_token_secret: process.env.ACCESS_TOKEN_SECRET
 })
-twitterClient.saySomething = async function generateRandomRefrain () {
+twitterClient.saySomething = async function generateRandomSaying () {
   try {
     const phrase = await auxFunctions.sayings.makeString()
     console.log('Posting on twitter: %s', phrase)
@@ -46,7 +46,7 @@ twitterClient.saySomething = async function generateRandomRefrain () {
     const urlResult = `https://twitter.com/${result.user.screen_name}/status/${result.id}`
     console.log('PostingSuccess: %s', urlResult)
   } catch (error) {
-    console.error('Error while posting random refrain: %j', error)
+    console.error('Error while posting random saying: %s %j', error, error)
   }
 }
 const twitterSearchTerms = ['galiza', 'galicia', 'galego']
