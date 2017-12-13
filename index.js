@@ -42,7 +42,7 @@ twitterClient.saySomething = async function generateRandomSaying () {
   try {
     const phrase = await auxFunctions.sayings.makeString()
     console.log('Posting on twitter: %s', phrase)
-    const result = await this.post('statuses/update', { status: phrase })
+    const result = await twitterClient.post('statuses/update', { status: phrase })
     const urlResult = `https://twitter.com/${result.user.screen_name}/status/${result.id}`
     console.log('PostingSuccess: %s', urlResult)
   } catch (error) {
@@ -53,7 +53,7 @@ const twitterSearchTerms = ['galiza', 'galicia', 'galego']
 const wordExclusionList = twitterSearchTerms.concat(['palabras', 'hilo', 'gallego'])
 const MAXIMUM_TWITTER_SEARCH_QUERIES = 10
 twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThinkingAbout () {
-  const searchApi = this.get.bind(twitterClient, 'search/tweets')
+  const searchApi = twitterClient.get.bind(twitterClient, 'search/tweets')
   const basicSearchParams = { result_type: 'recent', tweet_mode: 'extended', count: 100 }
   const synthesis = {
     wordList: {},
@@ -62,7 +62,7 @@ twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThink
   }
   const q = twitterSearchTerms.join(' OR ')
   console.log('Querying twitter about %s', q)
-  var currentQuery = searchApi.bind(this, Object.assign({}, { q: q }, basicSearchParams))
+  var currentQuery = searchApi.bind(twitterClient, Object.assign({}, { q: q }, basicSearchParams))
   do {
     try {
       let result = await currentQuery()
@@ -83,7 +83,7 @@ twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThink
       } else {
         console.log('Continuating query (remaining %s times) with %s', MAXIMUM_TWITTER_SEARCH_QUERIES - synthesis.queries, result.search_metadata.next_results)
         const nextParams = querystring.parse(result.search_metadata.next_results.replace('?', ''))
-        currentQuery = searchApi.bind(this, Object.assign({}, nextParams, basicSearchParams))
+        currentQuery = searchApi.bind(twitterClient, Object.assign({}, nextParams, basicSearchParams))
       }
     } catch (e) {
       console.error('Something has failed while searching twitter %s %j', e, e)
@@ -94,7 +94,7 @@ twitterClient.getWhatGalizaIsThinkingAbout = async function getWhatGalizaIsThink
 }
 twitterClient.postImageAboutGalizasThoughts = async function postImageAboutGalizasThoughts () {
   try {
-    const thoughts = await this.getWhatGalizaIsThinkingAbout()
+    const thoughts = await twitterClient.getWhatGalizaIsThinkingAbout()
     words = thoughts // Too deep for me
     const terms = Object.keys(thoughts.wordList)
     const top5 = terms
@@ -113,9 +113,9 @@ twitterClient.postImageAboutGalizasThoughts = async function postImageAboutGaliz
     const image = Buffer.from(await request.get({ url: randomImageURL, encoding: null }), 'binary').toString('base64')
     console.log('Got image of %s base64 characters', image.length)
 
-    const uploadResults = await this.post('media/upload', { media_data: image })
+    const uploadResults = await twitterClient.post('media/upload', { media_data: image })
     const phrase = `Looks like Galiza is thinking about "${searchTerms}"... #galiza #galicia`
-    const result = await this.post('statuses/update', { status: phrase, media_ids: uploadResults.media_id_string })
+    const result = await twitterClient.post('statuses/update', { status: phrase, media_ids: uploadResults.media_id_string })
 
     const urlResult = `https://twitter.com/${result.user.screen_name}/status/${result.id}`
     console.log('Posting Success: %s', urlResult)
